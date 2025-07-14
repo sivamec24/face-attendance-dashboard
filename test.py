@@ -72,7 +72,9 @@ while True:
         cv2.rectangle(frame, (x, y - 40), (x + w, y), (50, 50, 255), -1)
         cv2.putText(frame, str(output[0]), (x + 5, y - 15), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 1)
 
-    # ✅ Show the direct webcam frame (no background overlay)
+    # ✅ Show instructions on the webcam frame
+    instruction_text = "Press 'o' for attendance | Press 'q' to quit"
+    cv2.putText(frame, instruction_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
     cv2.imshow("Face Recognition Login System", frame)
 
     k = cv2.waitKey(1)
