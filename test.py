@@ -6,6 +6,7 @@ import os
 import csv
 import time
 import pyttsx3
+import subprocess
 from datetime import datetime
 
 # ✅ Base directories
@@ -72,9 +73,9 @@ while True:
         cv2.rectangle(frame, (x, y - 40), (x + w, y), (50, 50, 255), -1)
         cv2.putText(frame, str(output[0]), (x + 5, y - 15), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 1)
 
-    # ✅ Show instructions on the webcam frame
-    instruction_text = "Press 'o' for attendance | Press 'q' to quit"
-    cv2.putText(frame, instruction_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    # ✅ Show instructions
+    cv2.putText(frame, "Press 'o' for attendance | 'q' to quit", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
     cv2.imshow("Face Recognition Login System", frame)
 
     k = cv2.waitKey(1)
@@ -86,6 +87,9 @@ while True:
                 writer.writerow(COL_NAMES)
             writer.writerow(attendance)
         time.sleep(1)
+
+        # ✅ Auto push to GitHub
+        subprocess.run(["python3", "auto_push.py"])
 
     if k == ord('q'):
         break
