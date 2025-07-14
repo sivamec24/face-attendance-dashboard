@@ -20,7 +20,7 @@ def speak(text):
     engine.say(text)
     engine.runAndWait()
 
-speak("Welcome")
+speak("Welcome to the Face Recognition System")
 
 # ✅ Ensure folders exist
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -59,39 +59,47 @@ while True:
     for (x, y, w, h) in faces:
         crop_img = frame[y:y + h, x:x + w]
         resized_img = cv2.resize(crop_img, (50, 50)).flatten().reshape(1, -1)
+
+        # Predict and get average distance
         output = knn.predict(resized_img)
+        neighbors = knn.kneighbors(resized_img, return_distance=True)
+        avg_distance = np.mean(neighbors[0])
 
-        ts = time.time()
-        date = datetime.fromtimestamp(ts).strftime("%d-%m-%Y")
-        timestamp = datetime.fromtimestamp(ts).strftime("%H:%M:%S")
-        attendance = [str(output[0]), str(timestamp)]
-        attendance_file = os.path.join(ATTENDANCE_DIR, f"Attendance_{date}.csv")
-        exist = os.path.isfile(attendance_file)
+        if avg_distance < 5000:  # Tune this threshold
+            name = str(output[0])
+            ts = time.time()
+            date = datetime.fromtimestamp(ts).strftime("%d-%m-%Y")
+            timestamp = datetime.fromtimestamp(ts).strftime("%H:%M:%S")
+            attendance = [name, timestamp]
+            attendance_file = os.path.join(ATTENDANCE_DIR, f"Attendance_{date}.csv")
+            exist = os.path.isfile(attendance_file)
 
-        # Draw rectangle and label
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (50, 50, 255), 2)
-        cv2.rectangle(frame, (x, y - 40), (x + w, y), (50, 50, 255), -1)
-        cv2.putText(frame, str(output[0]), (x + 5, y - 15), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 1)
+            # Draw rectangle and name
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (50, 50, 255), 2)
+            cv2.rectangle(frame, (x, y - 40), (x + w, y), (50, 50, 255), -1)
+            cv2.putText(frame, name, (x + 5, y - 15), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 1)
+
+            # Save attendance if 'o' pressed
+            k = cv2.waitKey(1)
+            if k == ord('o'):
+                speak(f"Attendance taken for {name}")
+                with open(attendance_file, "a", newline="") as csvfile:
+                    writer = csv.writer(csvfile)
+                    if not exist:
+                        writer.writerow(COL_NAMES)
+                    writer.writerow(attendance)
+                print(f"[INFO] Attendance saved for {name}")
+
+                # ✅ Auto push to GitHub
+                subprocess.run(["python3", "auto_push.py"])
+                time.sleep(1)
 
     # ✅ Show instructions
-    cv2.putText(frame, "Press 'o' for attendance | 'q' to quit", (10, 30),
+    cv2.putText(frame, "Press 'o' to mark attendance | Press 'q' to quit", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
     cv2.imshow("Face Recognition Login System", frame)
 
-    k = cv2.waitKey(1)
-    if k == ord('o'):
-        speak("Attendance Taken.")
-        with open(attendance_file, "a", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            if not exist:
-                writer.writerow(COL_NAMES)
-            writer.writerow(attendance)
-        time.sleep(1)
-
-        # ✅ Auto push to GitHub
-        subprocess.run(["python3", "auto_push.py"])
-
-    if k == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 video.release()
